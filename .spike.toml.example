@@ -1,0 +1,24 @@
+# spike-mcp configuration
+# Copy this file: cp .spike.toml.example .spike.toml
+# Edit with your actual values.
+# NEVER put your API token here — use ATLASSIAN_API_TOKEN env var instead.
+
+[atlassian]
+base_url = "https://yourorg.atlassian.net"
+email    = "you@yourorg.com"
+
+[confluence]
+space_key      = "ENG"
+parent_page_id = "123456"
+
+[jira]
+project_key        = "PLAT"
+epic_issue_type    = "Epic"
+story_issue_type   = "Story"
+task_issue_type    = "Task"
+default_label      = "spike"
+story_points_field = "customfield_10016"
+epic_link_field    = "customfield_10014"
+
+[tickets]
+story_point_scale = [1, 2, 3, 5, 8, 13]
