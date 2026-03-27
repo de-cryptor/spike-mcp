@@ -132,4 +132,152 @@ def _md_to_adf(md: str) -> dict:
 
 
 class JiraClient:
-    pass  # implemented in Task 7
+    def __init__(self, config: SpikeConfig) -> None:
+        self._base_url = config.atlassian.base_url.rstrip('/')
+        credentials = base64.b64encode(
+            f"{config.atlassian.email}:{config.api_token}".encode()
+        ).decode()
+        self._headers = {
+            "Authorization": f"Basic {credentials}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        self._config = config
+
+    async def search_issues(
+        self, query: str, project_key: str = "", limit: int = 10
+    ) -> list[dict]:
+        jql = f'text~"{query}"'
+        if project_key:
+            jql += f' AND project="{project_key}"'
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self._base_url}/rest/api/3/issue/search",
+                params={"jql": jql, "maxResults": limit, "fields": "summary,issuetype,status"},
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        return [
+            {
+                "key": issue["key"],
+                "summary": issue["fields"]["summary"],
+                "type": issue["fields"]["issuetype"]["name"],
+                "status": issue["fields"]["status"]["name"],
+                "url": f"{self._base_url}/browse/{issue['key']}",
+            }
+            for issue in data.get("issues", [])
+        ]
+
+    async def get_issue(self, issue_key: str) -> dict:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self._base_url}/rest/api/3/issue/{issue_key}",
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+            return resp.json()
+
+    async def create_epic(
+        self,
+        summary: str,
+        description: str,
+        label: str = "",
+        project_key: str = "",
+    ) -> str:
+        project = project_key or self._config.jira.project_key
+        label = label or self._config.jira.default_label
+        payload = {
+            "fields": {
+                "project": {"key": project},
+                "summary": summary,
+                "issuetype": {"name": self._config.jira.epic_issue_type},
+                "description": _md_to_adf(description),
+                "labels": [label],
+            }
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{self._base_url}/rest/api/3/issue",
+                json=payload,
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+            return resp.json()["key"]
+
+    async def create_story(
+        self,
+        epic_key: str,
+        summary: str,
+        description: str,
+        acceptance_criteria: str,
+        story_points: Optional[int] = None,
+        label: str = "",
+        project_key: str = "",
+    ) -> str:
+        project = project_key or self._config.jira.project_key
+        label = label or self._config.jira.default_label
+        full_description = (
+            description + "\n\n**Acceptance Criteria**\n" + acceptance_criteria
+        )
+        fields: dict = {
+            "project": {"key": project},
+            "summary": summary,
+            "issuetype": {"name": self._config.jira.story_issue_type},
+            "description": _md_to_adf(full_description),
+            "labels": [label],
+            "parent": {"key": epic_key},
+        }
+        if story_points is not None:
+            fields[self._config.jira.story_points_field] = story_points
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{self._base_url}/rest/api/3/issue",
+                json={"fields": fields},
+                headers=self._headers,
+            )
+            if resp.status_code == 400 and "parent" in resp.text:
+                fields.pop("parent")
+                fields[self._config.jira.epic_link_field] = epic_key
+                resp = await client.post(
+                    f"{self._base_url}/rest/api/3/issue",
+                    json={"fields": fields},
+                    headers=self._headers,
+                )
+            resp.raise_for_status()
+            return resp.json()["key"]
+
+    async def create_task(
+        self,
+        epic_key: str,
+        summary: str,
+        description: str,
+        label: str = "",
+        project_key: str = "",
+    ) -> str:
+        project = project_key or self._config.jira.project_key
+        label = label or self._config.jira.default_label
+        fields: dict = {
+            "project": {"key": project},
+            "summary": summary,
+            "issuetype": {"name": self._config.jira.task_issue_type},
+            "description": _md_to_adf(description),
+            "labels": [label],
+            "parent": {"key": epic_key},
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{self._base_url}/rest/api/3/issue",
+                json={"fields": fields},
+                headers=self._headers,
+            )
+            if resp.status_code == 400 and "parent" in resp.text:
+                fields.pop("parent")
+                fields[self._config.jira.epic_link_field] = epic_key
+                resp = await client.post(
+                    f"{self._base_url}/rest/api/3/issue",
+                    json={"fields": fields},
+                    headers=self._headers,
+                )
+            resp.raise_for_status()
+            return resp.json()["key"]
