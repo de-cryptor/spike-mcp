@@ -38,18 +38,19 @@ def _md_to_storage(md: str) -> str:
                 i += 1
             i += 1  # skip closing ```
             body = '\n'.join(body_lines)
+            body_safe = body.replace(']]>', ']]]]><![CDATA[>')
 
             if lang == 'mermaid':
                 result.append(
                     '<ac:structured-macro ac:name="mermaid">'
-                    f'<ac:plain-text-body><![CDATA[{body}]]></ac:plain-text-body>'
+                    f'<ac:plain-text-body><![CDATA[{body_safe}]]></ac:plain-text-body>'
                     '</ac:structured-macro>'
                 )
             else:
                 result.append(
                     '<ac:structured-macro ac:name="code">'
                     f'<ac:parameter ac:name="language">{lang}</ac:parameter>'
-                    f'<ac:plain-text-body><![CDATA[{body}]]></ac:plain-text-body>'
+                    f'<ac:plain-text-body><![CDATA[{body_safe}]]></ac:plain-text-body>'
                     '</ac:structured-macro>'
                 )
             continue

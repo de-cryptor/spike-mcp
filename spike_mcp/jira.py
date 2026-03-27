@@ -236,14 +236,19 @@ class JiraClient:
                 json={"fields": fields},
                 headers=self._headers,
             )
-            if resp.status_code == 400 and "parent" in resp.text:
-                fields.pop("parent")
-                fields[self._config.jira.epic_link_field] = epic_key
-                resp = await client.post(
-                    f"{self._base_url}/rest/api/3/issue",
-                    json={"fields": fields},
-                    headers=self._headers,
-                )
+            if resp.status_code == 400:
+                try:
+                    error_keys = resp.json().get("errors", {})
+                except Exception:
+                    error_keys = {}
+                if "parent" in error_keys:
+                    fields.pop("parent")
+                    fields[self._config.jira.epic_link_field] = epic_key
+                    resp = await client.post(
+                        f"{self._base_url}/rest/api/3/issue",
+                        json={"fields": fields},
+                        headers=self._headers,
+                    )
             resp.raise_for_status()
             return resp.json()["key"]
 
@@ -271,13 +276,18 @@ class JiraClient:
                 json={"fields": fields},
                 headers=self._headers,
             )
-            if resp.status_code == 400 and "parent" in resp.text:
-                fields.pop("parent")
-                fields[self._config.jira.epic_link_field] = epic_key
-                resp = await client.post(
-                    f"{self._base_url}/rest/api/3/issue",
-                    json={"fields": fields},
-                    headers=self._headers,
-                )
+            if resp.status_code == 400:
+                try:
+                    error_keys = resp.json().get("errors", {})
+                except Exception:
+                    error_keys = {}
+                if "parent" in error_keys:
+                    fields.pop("parent")
+                    fields[self._config.jira.epic_link_field] = epic_key
+                    resp = await client.post(
+                        f"{self._base_url}/rest/api/3/issue",
+                        json={"fields": fields},
+                        headers=self._headers,
+                    )
             resp.raise_for_status()
             return resp.json()["key"]

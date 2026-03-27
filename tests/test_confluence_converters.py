@@ -61,6 +61,14 @@ def test_md_to_storage_mermaid_block():
     assert 'ac:name="code"' not in result
 
 
+def test_md_to_storage_cdata_injection_escaped():
+    """]]> inside a code block must be escaped so the CDATA section stays valid."""
+    md = "```python\nx = a[0]]]>evil\n```"
+    result = _md_to_storage(md)
+    # The ]]> in the body must be split into ]]]]><![CDATA[> to prevent early CDATA termination
+    assert "]]]]><![CDATA[>" in result
+
+
 def test_md_to_storage_blank_lines_skipped():
     result = _md_to_storage("line one\n\nline two")
     assert "<p>line one</p>" in result

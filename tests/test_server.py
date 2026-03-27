@@ -2,6 +2,7 @@ import json
 import httpx
 import pytest
 import respx
+from mcp.types import PromptMessage, TextContent
 
 from spike_mcp.server import create_server
 from spike_mcp.templates import SYSTEM_PROMPT
@@ -52,7 +53,14 @@ def test_spike_workflow_prompt_registered(spike_config):
 def test_spike_workflow_prompt_returns_system_prompt(spike_config):
     server = create_server(spike_config)
     fn = _get_prompt_fn(server, "spike_workflow")
-    assert fn() == SYSTEM_PROMPT
+    result = fn()
+    assert isinstance(result, list)
+    assert len(result) == 1
+    msg = result[0]
+    assert isinstance(msg, PromptMessage)
+    assert msg.role == "user"
+    assert isinstance(msg.content, TextContent)
+    assert msg.content.text == SYSTEM_PROMPT
 
 
 # ── get_project_config ─────────────────────────────────────────────────────────

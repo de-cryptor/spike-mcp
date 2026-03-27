@@ -4,6 +4,7 @@ import json
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.types import PromptMessage, TextContent
 
 from spike_mcp.config import SpikeConfig, load_config
 from spike_mcp.confluence import ConfluenceClient
@@ -153,9 +154,9 @@ def create_server(config: SpikeConfig) -> FastMCP:
         )
 
     @mcp_server.prompt()
-    def spike_workflow() -> str:
+    def spike_workflow() -> list[PromptMessage]:
         """Workflow instructions for running a spike with Claude. Invoke at the start of a spike session."""
-        return SYSTEM_PROMPT
+        return [PromptMessage(role="user", content=TextContent(type="text", text=SYSTEM_PROMPT))]
 
     return mcp_server
 
