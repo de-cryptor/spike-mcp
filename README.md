@@ -92,9 +92,22 @@ Never put the token in `.spike.toml` — it is read exclusively from the environ
 
 ---
 
-## Connect to Claude Desktop
+## Connect to Claude
 
-Add the MCP server to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+spike-mcp works with both **Claude Desktop** (GUI app) and **Claude Code** (CLI). Follow the guide for whichever you use — or both.
+
+---
+
+### Option A — Claude Desktop
+
+**Step 1 — Find the config file**
+
+| Platform | Path |
+|---|---|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+
+**Step 2 — Add spike-mcp to `mcpServers`**
 
 ```json
 {
@@ -109,9 +122,48 @@ Add the MCP server to `~/Library/Application Support/Claude/claude_desktop_confi
 }
 ```
 
-Restart Claude Desktop. A hammer icon in the toolbar confirms the tools are active.
+> **macOS/Homebrew tip:** If `spike-mcp` is not on your PATH, use the full binary path:
+> ```json
+> "command": "/opt/homebrew/bin/spike-mcp"
+> ```
+> Run `which spike-mcp` in your terminal to find the path.
 
-> **Note:** If `spike-mcp` is not on your PATH, use the full path to the binary, e.g. `/opt/homebrew/bin/spike-mcp` on macOS with Homebrew.
+**Step 3 — Restart Claude Desktop**
+
+Quit and reopen the app. A hammer icon (🔨) in the toolbar confirms the tools are active.
+
+---
+
+### Option B — Claude Code (CLI)
+
+**Step 1 — Add spike-mcp globally**
+
+Run this once so the server is available in every project:
+
+```bash
+claude mcp add spike-mcp spike-mcp -s user -e ATLASSIAN_API_TOKEN="your-token-here"
+```
+
+> **macOS/Homebrew tip:** Use the full path if `spike-mcp` is not on your PATH:
+> ```bash
+> claude mcp add spike-mcp /opt/homebrew/bin/spike-mcp -s user -e ATLASSIAN_API_TOKEN="your-token-here"
+> ```
+
+**Step 2 — Verify the connection**
+
+```bash
+claude mcp list
+```
+
+You should see:
+
+```
+spike-mcp: /opt/homebrew/bin/spike-mcp  - ✓ Connected
+```
+
+**Step 3 — Start a new Claude Code session**
+
+MCP servers are loaded at session start. Open a fresh session in any directory and spike-mcp tools will be available automatically.
 
 ---
 
