@@ -5,23 +5,40 @@ build-backend = "hatchling.build"
 [project]
 name = "spike-mcp"
 version = "0.1.0"
-description = "MCP server for AI-powered spike research and Jira/Confluence automation"
+description = "MCP server that connects Claude to Jira and Confluence for AI-powered spike research, technical design, and ticket creation"
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.11"
-dependencies = [
-    "mcp>=1.0.0",
-    "httpx>=0.27.0",
-    "pydantic>=2.0.0",
+authors = [
+  { name = "Jatin Goel", email = "jatin.iiita@gmail.com" }
 ]
+keywords = ["mcp", "jira", "confluence", "claude", "ai", "spike", "atlassian"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Office/Business :: Groupware",
+]
+dependencies = [
+  "mcp>=1.0.0",
+  "httpx>=0.27.0",
+  "pydantic>=2.0.0",
+]
+
+[project.urls]
+Homepage      = "https://github.com/de-cryptor/spike-mcp"
+Repository    = "https://github.com/de-cryptor/spike-mcp"
+"Bug Tracker" = "https://github.com/de-cryptor/spike-mcp/issues"
 
 [project.scripts]
 spike-mcp = "spike_mcp.server:main"
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.23.0",
-    "respx>=0.21.0",
-]
+dev = ["pytest>=8.0.0", "pytest-asyncio>=0.23.0", "respx>=0.21.0", "ruff", "build", "twine"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

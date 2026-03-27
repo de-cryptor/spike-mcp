@@ -7,3 +7,8 @@ build/
 .venv/
 venv/
 .env
+
+# Atlassian project config — contains org-specific values, never commit
+.spike.toml
+# But do commit the example:
+!.spike.toml.example
