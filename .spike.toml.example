@@ -8,6 +8,9 @@ base_url = "https://yourorg.atlassian.net"
 email    = "you@yourorg.com"
 
 [confluence]
+# Optional: set only if your Confluence is on a different domain than Jira
+# (e.g. yourorg-docs.atlassian.net vs yourorg.atlassian.net)
+# base_url  = "https://yourorg-docs.atlassian.net"
 space_key      = "ENG"
 parent_page_id = "123456"
 

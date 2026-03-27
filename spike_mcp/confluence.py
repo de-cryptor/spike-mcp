@@ -104,7 +104,8 @@ def _strip_html(html: str) -> str:
 
 class ConfluenceClient:
     def __init__(self, config: SpikeConfig) -> None:
-        self._base_url = config.atlassian.base_url.rstrip('/')
+        confluence_url = config.confluence.base_url or config.atlassian.base_url
+        self._base_url = confluence_url.rstrip('/')
         credentials = base64.b64encode(
             f"{config.atlassian.email}:{config.api_token}".encode()
         ).decode()

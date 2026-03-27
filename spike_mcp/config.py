@@ -16,6 +16,7 @@ class AtlassianConfig(BaseModel):
 class ConfluenceConfig(BaseModel):
     space_key: str = ""
     parent_page_id: str = ""
+    base_url: str = ""  # Override if Confluence is on a different domain than Jira
 
 
 class JiraConfig(BaseModel):
@@ -26,6 +27,7 @@ class JiraConfig(BaseModel):
     default_label: str = "spike"
     story_points_field: str = "customfield_10016"
     epic_link_field: str = "customfield_10014"
+    required_fields: dict = {}  # Org-specific mandatory fields merged into every create call
 
 
 class TicketsConfig(BaseModel):

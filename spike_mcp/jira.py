@@ -187,19 +187,18 @@ class JiraClient:
     ) -> str:
         project = project_key or self._config.jira.project_key
         label = label or self._config.jira.default_label
-        payload = {
-            "fields": {
-                "project": {"key": project},
-                "summary": summary,
-                "issuetype": {"name": self._config.jira.epic_issue_type},
-                "description": _md_to_adf(description),
-                "labels": [label],
-            }
+        fields: dict = {
+            "project": {"key": project},
+            "summary": summary,
+            "issuetype": {"name": self._config.jira.epic_issue_type},
+            "description": _md_to_adf(description),
+            "labels": [label],
+            **self._config.jira.required_fields,
         }
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 f"{self._base_url}/rest/api/3/issue",
-                json=payload,
+                json={"fields": fields},
                 headers=self._headers,
             )
             resp.raise_for_status()
@@ -227,6 +226,7 @@ class JiraClient:
             "description": _md_to_adf(full_description),
             "labels": [label],
             "parent": {"key": epic_key},
+            **self._config.jira.required_fields,
         }
         if story_points is not None:
             fields[self._config.jira.story_points_field] = story_points
@@ -269,6 +269,7 @@ class JiraClient:
             "description": _md_to_adf(description),
             "labels": [label],
             "parent": {"key": epic_key},
+            **self._config.jira.required_fields,
         }
         async with httpx.AsyncClient() as client:
             resp = await client.post(
