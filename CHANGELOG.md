@@ -5,6 +5,11 @@ Bump `version` in `pyproject.toml`, add an entry here, then `git tag vX.Y.Z` to 
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-03-27
+
+### Added
+- `update_spike_doc` MCP tool — updates an existing Confluence page in place (fetches current version, increments, overwrites content)
+
 ## [0.1.1] — 2026-03-27
 
 ### Added

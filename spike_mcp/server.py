@@ -65,6 +65,19 @@ def create_server(config: SpikeConfig) -> FastMCP:
             return f"Confluence API error {e.response.status_code}: {e.response.text[:300]}"
 
     @mcp_server.tool()
+    async def update_spike_doc(
+        page_id: str,
+        title: str,
+        body_markdown: str,
+    ) -> str:
+        """Update an existing Confluence page in place. Fetches the current version, increments it, and overwrites the content."""
+        try:
+            result = await confluence.update_page(page_id, title, body_markdown)
+            return json.dumps(result, indent=2)
+        except httpx.HTTPStatusError as e:
+            return f"Confluence API error {e.response.status_code}: {e.response.text[:300]}"
+
+    @mcp_server.tool()
     async def create_epic(
         summary: str,
         description: str,

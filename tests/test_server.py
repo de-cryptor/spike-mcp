@@ -150,6 +150,34 @@ async def test_write_spike_doc(spike_config):
     assert "url" in data
 
 
+# ── update_spike_doc ───────────────────────────────────────────────────────────
+
+@respx.mock
+async def test_update_spike_doc(spike_config):
+    respx.get(f"{BASE}/wiki/rest/api/content/777").mock(
+        return_value=httpx.Response(200, json={
+            "id": "777",
+            "title": "Old Title",
+            "version": {"number": 3},
+        })
+    )
+    respx.put(f"{BASE}/wiki/rest/api/content/777").mock(
+        return_value=httpx.Response(200, json={
+            "id": "777",
+            "_links": {"webui": "/spaces/ENG/pages/777"},
+        })
+    )
+    server = create_server(spike_config)
+    result = await _get_tool(server, "update_spike_doc")(
+        page_id="777",
+        title="Updated Title",
+        body_markdown="# Updated\n\nNew content",
+    )
+    data = json.loads(result)
+    assert data["id"] == "777"
+    assert "url" in data
+
+
 # ── create_epic ────────────────────────────────────────────────────────────────
 
 @respx.mock
