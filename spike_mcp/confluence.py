@@ -102,4 +102,139 @@ def _strip_html(html: str) -> str:
 
 
 class ConfluenceClient:
-    pass  # implemented in Task 5
+    def __init__(self, config: SpikeConfig) -> None:
+        self._base_url = config.atlassian.base_url.rstrip('/')
+        credentials = base64.b64encode(
+            f"{config.atlassian.email}:{config.api_token}".encode()
+        ).decode()
+        self._headers = {
+            "Authorization": f"Basic {credentials}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        self._default_space = config.confluence.space_key
+        self._default_parent = config.confluence.parent_page_id
+
+    async def get_page(self, page_id: str) -> dict:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self._base_url}/wiki/rest/api/content/{page_id}",
+                params={"expand": "body.storage"},
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        body_html = data.get("body", {}).get("storage", {}).get("value", "")
+        return {
+            "id": data["id"],
+            "title": data["title"],
+            "body": _strip_html(body_html),
+            "url": f"{self._base_url}/wiki{data['_links']['webui']}",
+        }
+
+    async def search(
+        self, query: str, space_key: str = "", limit: int = 10
+    ) -> list[dict]:
+        cql = f'text~"{query}" AND type=page'
+        if space_key:
+            cql += f' AND space="{space_key}"'
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self._base_url}/wiki/rest/api/content/search",
+                params={"cql": cql, "limit": limit, "expand": "excerpt"},
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        return [
+            {
+                "id": item["id"],
+                "title": item["title"],
+                "excerpt": item.get("excerpt", "")[:400],
+                "url": f"{self._base_url}/wiki{item['_links']['webui']}",
+            }
+            for item in data.get("results", [])
+        ]
+
+    async def get_page_children(self, page_id: str, limit: int = 25) -> list[dict]:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self._base_url}/wiki/rest/api/content/{page_id}/child/page",
+                params={"limit": limit},
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        return [
+            {"id": item["id"], "title": item["title"]}
+            for item in data.get("results", [])
+        ]
+
+    async def create_page(
+        self,
+        title: str,
+        body_markdown: str,
+        space_key: str = "",
+        parent_id: str = "",
+    ) -> dict:
+        space = space_key or self._default_space
+        parent = parent_id or self._default_parent
+        payload: dict = {
+            "type": "page",
+            "title": title,
+            "space": {"key": space},
+            "body": {
+                "storage": {
+                    "value": _md_to_storage(body_markdown),
+                    "representation": "storage",
+                }
+            },
+        }
+        if parent:
+            payload["ancestors"] = [{"id": parent}]
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{self._base_url}/wiki/rest/api/content",
+                json=payload,
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        return {
+            "id": data["id"],
+            "url": f"{self._base_url}/wiki{data['_links']['webui']}",
+        }
+
+    async def update_page(
+        self, page_id: str, title: str, body_markdown: str
+    ) -> dict:
+        async with httpx.AsyncClient() as client:
+            get_resp = await client.get(
+                f"{self._base_url}/wiki/rest/api/content/{page_id}",
+                params={"expand": "version"},
+                headers=self._headers,
+            )
+            get_resp.raise_for_status()
+            current_version = get_resp.json()["version"]["number"]
+            payload = {
+                "type": "page",
+                "title": title,
+                "version": {"number": current_version + 1},
+                "body": {
+                    "storage": {
+                        "value": _md_to_storage(body_markdown),
+                        "representation": "storage",
+                    }
+                },
+            }
+            put_resp = await client.put(
+                f"{self._base_url}/wiki/rest/api/content/{page_id}",
+                json=payload,
+                headers=self._headers,
+            )
+            put_resp.raise_for_status()
+            data = put_resp.json()
+        return {
+            "id": data["id"],
+            "url": f"{self._base_url}/wiki{data['_links']['webui']}",
+        }
