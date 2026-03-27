@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/spike-mcp)](https://pypi.org/project/spike-mcp/)
 [![Python](https://img.shields.io/pypi/pyversions/spike-mcp)](https://pypi.org/project/spike-mcp/)
 
-MCP server that connects Claude Code to Jira and Confluence. Engineers can research spikes, generate technical solutions with Mermaid architecture diagrams, write Confluence docs, and create Jira epic + story breakdowns through natural conversation — no Anthropic API key required.
+MCP server that connects Claude to Jira and Confluence. Engineers can research spikes, generate technical solutions with Mermaid architecture diagrams, write Confluence docs, and create Jira epic + story breakdowns through natural conversation — no Anthropic API key required.
 
 ---
 
@@ -29,9 +29,14 @@ uv add spike-mcp
 
 ## Setup
 
-### Step 1 — Create `.spike.toml`
+### Step 1 — Create `~/.spike.toml`
 
-Create a `.spike.toml` in your project root (or home directory) with your Atlassian details:
+Create `~/.spike.toml` in your home directory with your Atlassian details:
+
+```bash
+# macOS / Linux
+touch ~/.spike.toml
+```
 
 ```toml
 [atlassian]
@@ -39,6 +44,8 @@ base_url = "https://yourorg.atlassian.net"
 email    = "you@yourorg.com"
 
 [confluence]
+# If your Confluence is on a different domain than Jira, set this:
+# base_url = "https://yourorg-docs.atlassian.net"
 space_key      = "ENG"
 parent_page_id = "123456"
 
@@ -55,7 +62,23 @@ epic_link_field    = "customfield_10014"
 story_point_scale = [1, 2, 3, 5, 8, 13]
 ```
 
-See `.spike.toml.example` for a full annotated example.
+> **Tip:** Config is also discovered automatically in your project root or any parent directory up to the git root — useful when running spike-mcp from a specific repo. The search order is: current directory → git root walk-up → `~/.spike.toml`.
+
+#### Org-specific required fields
+
+Some Jira projects enforce mandatory custom fields (e.g. Account, Tier, Work type). Add them under `[jira.required_fields]` and they will be merged into every ticket created:
+
+```toml
+[jira.required_fields]
+customfield_11139 = 15                  # plain integer (check your field type)
+customfield_11518 = { id = "12203" }    # single select
+customfield_11664 = [{ id = "13089" }]  # multi-select (array)
+```
+
+To find the correct field IDs and allowed values for your project, call the Jira create-meta API:
+```
+GET /rest/api/3/issue/createmeta?projectKeys=PROJ&issuetypeNames=Epic&expand=projects.issuetypes.fields
+```
 
 ### Step 2 — Set your API token
 
@@ -87,6 +110,8 @@ Add the MCP server to `~/Library/Application Support/Claude/claude_desktop_confi
 ```
 
 Restart Claude Desktop. A hammer icon in the toolbar confirms the tools are active.
+
+> **Note:** If `spike-mcp` is not on your PATH, use the full path to the binary, e.g. `/opt/homebrew/bin/spike-mcp` on macOS with Homebrew.
 
 ---
 
@@ -130,18 +155,18 @@ All fields in `.spike.toml`:
 |---|---|---|
 | `atlassian.base_url` | Yes | Your Atlassian Cloud domain, e.g. `https://myorg.atlassian.net` |
 | `atlassian.email` | Yes | Your Atlassian account email |
-| `confluence.space_key` | Yes | Confluence space key for new spike docs, e.g. `ENG` |
+| `confluence.base_url` | No | Override if Confluence is on a different domain than Jira |
+| `confluence.space_key` | No | Confluence space key for new spike docs, e.g. `ENG` |
 | `confluence.parent_page_id` | No | Page ID to nest new docs under |
-| `jira.project_key` | Yes | Jira project key, e.g. `PLAT` |
+| `jira.project_key` | No | Jira project key, e.g. `PLAT` |
 | `jira.epic_issue_type` | No | Issue type name for epics (default: `Epic`) |
 | `jira.story_issue_type` | No | Issue type name for stories (default: `Story`) |
 | `jira.task_issue_type` | No | Issue type name for tasks (default: `Task`) |
 | `jira.default_label` | No | Label applied to all created tickets (default: `spike`) |
 | `jira.story_points_field` | No | Custom field ID for story points; varies per instance |
 | `jira.epic_link_field` | No | Custom field ID for epic link; classic projects only |
+| `jira.required_fields` | No | Org-specific mandatory fields merged into every create call |
 | `tickets.story_point_scale` | No | Fibonacci scale used when prompting for estimates |
-
-Config search order: explicit path → current directory → git root walk-up → `~/.spike.toml`.
 
 ---
 

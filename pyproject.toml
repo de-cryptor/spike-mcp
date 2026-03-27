@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "spike-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server that connects Claude to Jira and Confluence for AI-powered spike research, technical design, and ticket creation"
 readme = "README.md"
 license = { text = "MIT" }
